@@ -10,7 +10,7 @@ Major modifications are:
 4. Some quality-of-life enhancements ;)
 
 ## Installation
-On Linux machine, just `make all` shall work fine.
+On Linux machine, just `make all` and `sudo make install` shall work fine.
 
 The default installation path is `/usr/local/slashemdir`, you may want to change it by modifing `HACKDIR` AND `SLASHEMDIR` in `./Makefile` and `./src/config.h` .
 
