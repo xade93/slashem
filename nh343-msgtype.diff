@@ -1,0 +1,168 @@
+diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//include/decl.h nethack-3.4.3-msgtype/include/decl.h
+--- nethack-3.4.3-orig//include/decl.h	2009-09-12 16:32:38.000000000 +0300
++++ nethack-3.4.3-msgtype/include/decl.h	2010-09-22 10:57:07.000000000 +0300
+@@ -385,6 +385,19 @@
+ };
+ #endif /* AUTOPICKUP_EXCEPTIONS */
+ 
++struct _plinemsg {
++    xchar msgtype;
++    char *pattern;
++    struct _plinemsg *next;
++};
++
++E struct _plinemsg *pline_msg;
++
++#define MSGTYP_NORMAL	0
++#define MSGTYP_NOREP	1
++#define MSGTYP_NOSHOW	2
++#define MSGTYP_STOP	3
++
+ #undef E
+ 
+ #endif /* DECL_H */
+diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//include/extern.h nethack-3.4.3-msgtype/include/extern.h
+--- nethack-3.4.3-orig//include/extern.h	2009-09-12 16:32:38.000000000 +0300
++++ nethack-3.4.3-msgtype/include/extern.h	2010-09-22 10:56:32.000000000 +0300
+@@ -1500,6 +1500,8 @@
+ 
+ /* ### pline.c ### */
+ 
++E void FDECL(msgpline_add, (int, char *));
++E void NDECL(msgpline_free);
+ E void VDECL(pline, (const char *,...)) PRINTF_F(1,2);
+ E void VDECL(Norep, (const char *,...)) PRINTF_F(1,2);
+ E void NDECL(free_youbuf);
+diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//src/decl.c nethack-3.4.3-msgtype/src/decl.c
+--- nethack-3.4.3-orig//src/decl.c	2009-09-12 16:32:38.000000000 +0300
++++ nethack-3.4.3-msgtype/src/decl.c	2010-09-22 10:58:12.000000000 +0300
+@@ -271,6 +271,8 @@
+ 					"lockdir", "configdir", "troubledir" };
+ #endif
+ 
++struct _plinemsg *pline_msg = NULL;
++
+ /* dummy routine used to force linkage */
+ void
+ decl_init()
+diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//src/files.c nethack-3.4.3-msgtype/src/files.c
+--- nethack-3.4.3-orig//src/files.c	2009-09-12 16:32:38.000000000 +0300
++++ nethack-3.4.3-msgtype/src/files.c	2010-09-22 10:58:46.000000000 +0300
+@@ -1782,6 +1782,20 @@
+ 	} else if (match_varname(buf, "NAME", 4)) {
+ 	    (void) strncpy(plname, bufp, PL_NSIZ-1);
+ 	    plnamesuffix();
++	} else if (match_varname(buf, "MSGTYPE", 7)) {
++	    char pattern[256];
++	    char msgtype[11];
++	    if (sscanf(bufp, "%10s \"%255[^\"]\"", msgtype, pattern) == 2) {
++		int typ = MSGTYP_NORMAL;
++		if (!strcasecmp("norep", msgtype)) typ = MSGTYP_NOREP;
++		else if (!strcasecmp("hide", msgtype)) typ = MSGTYP_NOSHOW;
++		else if (!strcasecmp("noshow", msgtype)) typ = MSGTYP_NOSHOW;
++		else if (!strcasecmp("more", msgtype)) typ = MSGTYP_STOP;
++		else if (!strcasecmp("stop", msgtype)) typ = MSGTYP_STOP;
++		if (typ != MSGTYP_NORMAL) {
++		    msgpline_add(typ, pattern);
++		}
++	    }
+ 	} else if (match_varname(buf, "ROLE", 4) ||
+ 		   match_varname(buf, "CHARACTER", 4)) {
+ 	    if ((len = str2role(bufp)) >= 0)
+diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//src/pline.c nethack-3.4.3-msgtype/src/pline.c
+--- nethack-3.4.3-orig//src/pline.c	2009-09-12 16:32:38.000000000 +0300
++++ nethack-3.4.3-msgtype/src/pline.c	2010-09-22 11:00:39.000000000 +0300
+@@ -15,6 +15,45 @@
+ 
+ static char *FDECL(You_buf, (int));
+ 
++void
++msgpline_add(typ, pattern)
++     int typ;
++     char *pattern;
++{
++    struct _plinemsg *tmp = (struct _plinemsg *) alloc(sizeof(struct _plinemsg));
++    if (!tmp) return;
++    tmp->msgtype = typ;
++    tmp->pattern = strdup(pattern);
++    tmp->next = pline_msg;
++    pline_msg = tmp;
++}
++
++void
++msgpline_free()
++{
++    struct _plinemsg *tmp = pline_msg;
++    struct _plinemsg *tmp2;
++    while (tmp) {
++	free(tmp->pattern);
++	tmp2 = tmp;
++	tmp = tmp->next;
++	free(tmp2);
++    }
++    pline_msg = NULL;
++}
++
++int
++msgpline_type(msg)
++     char *msg;
++{
++    struct _plinemsg *tmp = pline_msg;
++    while (tmp) {
++	if (pmatch(tmp->pattern, msg)) return tmp->msgtype;
++	tmp = tmp->next;
++    }
++    return MSGTYP_NORMAL;
++}
++
+ /*VARARGS1*/
+ /* Note that these declarations rely on knowledge of the internals
+  * of the variable argument handling stuff in "tradstdc.h"
+@@ -31,6 +70,8 @@
+ 	VA_END();
+ }
+ 
++char prevmsg[BUFSZ];
++
+ # ifdef USE_STDARG
+ static void
+ vpline(const char *line, va_list the_args) {
+@@ -48,6 +89,7 @@
+ #endif	/* USE_STDARG | USE_VARARG */
+ 
+ 	char pbuf[BUFSZ];
++	int typ;
+ /* Do NOT use VA_START and VA_END in here... see above */
+ 
+ 	if (!line || !*line) return;
+@@ -55,6 +97,7 @@
+ 	    Vsprintf(pbuf,line,VA_ARGS);
+ 	    line = pbuf;
+ 	}
++	typ = msgpline_type(line);
+ 	if (!iflags.window_inited) {
+ 	    raw_print(line);
+ 	    return;
+@@ -65,7 +108,11 @@
+ #endif /* MAC */
+ 	if (vision_full_recalc) vision_recalc(0);
+ 	if (u.ux) flush_screen(1);		/* %% */
++	if (typ == MSGTYP_NOSHOW) return;
++	if (typ == MSGTYP_NOREP && !strcmp(line, prevmsg)) return;
+ 	putstr(WIN_MESSAGE, 0, line);
++	strncpy(prevmsg, line, BUFSZ);
++	if (typ == MSGTYP_STOP) display_nhwindow(WIN_MESSAGE, TRUE); /* --more-- */
+ }
+ 
+ /*VARARGS1*/
+/* diff -Nurd '--exclude-from=diff_ignore_files.txt' nethack-3.4.3-orig//src/save.c nethack-3.4.3-msgtype/src/save.c */
+/* --- nethack-3.4.3-orig//src/save.c	2009-09-12 16:32:38.000000000 +0300 */
+/* +++ nethack-3.4.3-msgtype/src/save.c	2010-09-22 10:59:10.000000000 +0300 */
+/*@@ -959,6 +959,7 @@
+ 	unload_qtlist();
+ 	free_invbuf();	/* let_to_name (invent.c) */
+ 	free_youbuf();	/* You_buf,&c (pline.c) */
++	msgpline_free();
+ 	tmp_at(DISP_FREEMEM, 0);	/* temporary display effects */
+ #ifdef FREE_ALL_MEMORY
+ # define freeobjchn(X)	(saveobjchn(0, X, FREE_SAVE),  X = 0) */

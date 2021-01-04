@@ -17,17 +17,17 @@
 PREFIX   = /usr
 GAME     = slashem
 # GAME     = slashem.prg
-GAMEUID  = root
+GAMEUID  = pityhero
 GAMEGRP  = games
 
 # Permissions - some places use setgid instead of setuid, for instance
 # See also the option "SECURE" in include/config.h
-GAMEPERM = 02755
-FILEPERM = 0644
-EXEPERM  = 0755
-DIRPERM  = 0755
-VARFILEPERM = 0644
-VARDIRPERM  = 02775
+GAMEPERM = 02777
+FILEPERM = 0777
+EXEPERM  = 0777
+DIRPERM  = 0777
+VARFILEPERM = 0777
+VARDIRPERM  = 02777
 # GAMEDIR also appears in config.h as "HACKDIR".
 # VARDIR may also appear in unixconf.h as "VAR_PLAYGROUND" else GAMEDIR
 #

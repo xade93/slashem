@@ -8,7 +8,7 @@ Major modifications / bugfixes are:
 2. Fix the missing `$(WINSDLLIB)` in Makefile;
 3. Generating the missing GLHack fonts and tilesets;
 4. Some quality-of-life enhancements ;)
-
+5. Patch MSGTYPE from Pasi Kallinen (https://bilious.alt.org/?397)
 ## Installation
 On Linux machine, just `make all` and `sudo make install` shall work fine.
 
