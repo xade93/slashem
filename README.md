@@ -16,3 +16,6 @@ The default installation path is `/usr/local/slashemdir`, you may want to change
 You will then need to manually copy the tilesets and fonts you need to `/usr/local/slashemdir`. They are png files in dat folder.
 
 in case of bugs, go pray to RNGesus as nobody is maintaining this anymore.
+
+screenshot (not quite):
+![IMG_20200205_165436](https://user-images.githubusercontent.com/24752033/170781273-13f57489-cdf1-4660-b90d-aac2869f81af.jpg)
