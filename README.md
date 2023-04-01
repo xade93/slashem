@@ -1,5 +1,5 @@
 ## Introduction
-I have always been wanted to try SLASM'EM after I ascended in vanilla nethack with the wonderful GLHack port, however SLASHEM seems discontinued and last update of it was 2007, and I experience difficulty running it properly. Here is a working version, as tested in December 2020, with some patches to make it work as in 2020.
+I always wanted to try SLASM'EM after I ascended in vanilla nethack with the wonderful GLHack port, however SLASHEM seems discontinued and last update of it was 2007, and I experience difficulty running it properly. Here is a working version, as tested in December 2020, with some patches to make it work as in 2020.
 
 This repository is based on the latest version of the discontinued SLASH'EM(0.08E0F1) as of Dec 24, 2020, and is properly configured for OpenGL and SDL gaming, with workarounds I can successfully compile the game on my computer (Arch Linux Rolling Release).
 
